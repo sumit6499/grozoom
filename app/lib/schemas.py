@@ -7,10 +7,12 @@ class CountryOperator(BaseModel):
     high_priority: bool
 
 class SMSMetrics(BaseModel):
-    attempts: int
-    sent: int
-    received: int
-    confirmed: int
-    success_rate: float
-    SMS_success_rate: float
-    confirm_rate: Optional[float] = None
+    country :str
+    operator :str
+    attempts : int
+    sent : int
+    received :int 
+    confirmed :int
+    success_rate :int
+    sms_success_rate :int
+    confirm_rate :int
