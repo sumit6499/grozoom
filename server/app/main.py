@@ -1,39 +1,38 @@
-from typing import Union
-from fastapi import FastAPI, Header
-from pydantic import BaseModel
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.router import api_router
+from app.database.mongo_config import connect_to_mongodb, close_mongodb_connection
+from app.database.sql_config import connect_to_mysql, close_mysql_connection
+from app.services.alerts import initialize_telegram_bot
 
 app = FastAPI()
 
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(api_router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def startup_event():
+    connect_to_mongodb()
+    connect_to_mysql()
+    # initialize_telegram_bot()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    close_mongodb_connection()
+    close_mysql_connection()
 
 @app.get('/')
-async def read_root():
-    return {"message": "hello from server"}
+async def get_root()->dict:
+    return {"message":"Hello from SMS metrics backend"}
 
-
-@app.get('/health-check')
-async def check_health():
-    return {"message": "Health check success"}
-
-
-class BookModel(BaseModel):
-    name: str
-    author: str
-
-
-@app.post('/create-book')
-async def create_book(book_data: BookModel) -> dict:
-    return {
-        "book": book_data.name,
-        "author": book_data.author
-    }
-
-
-@app.get('/get-headers',status_code=201)
-async def get_headers(
-    accept: str = Header(None),
-    content_type: str = Header(None)
-):
-    request_header = {}
-    request_header["Accept"] = accept
-    request_header["Content_type"] = content_type
-    return request_header
+@app.get("/health-check")
+def check_health()->dict:
+    return {"success":True,"message":"Health check complete"}
